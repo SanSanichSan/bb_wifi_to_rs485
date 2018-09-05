@@ -240,7 +240,7 @@ do
 		MASK=$(route -n | grep $WIRELESS_DEVICE | grep -v UH | grep -v UG | cut -c33-48)
 		MASK=$(netmask2cidr $MASK)
 		GATEWAY=$(route -n | grep $WIRELESS_DEVICE | grep UG | cut -c17-32)
-		CLIENTS=$(nmap -sn -PU $NETWORK/$MASK --exclude $GATEWAY | grep done | cut -d "(" -f2 | cut -d " " -f1)
+		CLIENTS=$(nmap -sn -PU $NETWORK/24 --exclude $GATEWAY | grep done | cut -d "(" -f2 | cut -d " " -f1)
 		COUNTER=0
 	fi
 	((COUNTER++))
