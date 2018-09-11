@@ -232,7 +232,6 @@ do
 		QUALIY_VALUE=$(iwinfo | grep "Link Quality" | cut -d ' ' -f16 | cut -d "/" -f1)
 		SIGNAL_LEVEL=$(iwinfo | grep "Signal" | cut -d ' ' -f12)
 		SIGNAL_LEVEL=$((${SIGNAL_LEVEL}+65536))
-			echo $QUALIY_VALUE >> $HOME/debug.log
 			if ([[ $QUALIY_VALUE -eq "unknown" ]] || [[ $BIT_RATE -eq "unknown" ]] || [[ $SIGNAL_LEVEL -eq 65536 ]])
 			 then
 				QUALIY_VALUE=0
