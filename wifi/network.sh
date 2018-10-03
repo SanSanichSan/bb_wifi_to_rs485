@@ -19,8 +19,10 @@ COUNTER=10
 SSID=""
 PASSW=""
 
-sleep 120
+
+sleep 60
 #set -x
+/root/wifi/clients_list.sh &
 
 netmask2cidr()
 {
@@ -183,7 +185,6 @@ for index in {1..32}
 	fi
 
 }
-
 #uci set firewall.@zone[1].input=ACCEPT
 #uci commit
 
@@ -208,11 +209,9 @@ do
 			uci set wireless.@wifi-iface[0].password="$PASSW"
 			uci set wireless.@wifi-iface[0].disabled="0"
 			uci commit wireless; wifi
-
 			COUNTER=10
 		fi
 	fi
-
 
 
 	if [ 0 -ne ${#SSID} ];then
@@ -220,24 +219,23 @@ do
 
 
 		echo $SSID
+
 #		cat $HOME/scan_output | grep -n \"$SSID\" | head -1 > $HOME/essid_numbers
 
 #		SSID_LINES=$(cat $HOME/essid_numbers | cut -d ":" -f1)
 #		SSID_NAMES=$(cat $HOME/essid_numbers | cut -d "\"" -f2)
 #		BIT_RATE_LINES=$((${SSID_LINES}+5))
 #		QUALIY_LINES=$((${SSID_LINES}+3))
-
-		BIT_RATE=$(iwinfo | grep "Bit Rate:" | cut -d ':' -f2 | cut -d " " -f2)
-		QUALIY_BASE=$(iwinfo | grep "Link Quality" | cut -d ' ' -f16 | cut -d "/" -f2)
-		QUALIY_VALUE=$(iwinfo | grep "Link Quality" | cut -d ' ' -f16 | cut -d "/" -f1)
-		SIGNAL_LEVEL=$(iwinfo | grep "Signal" | cut -d ' ' -f12)
+		BIT_RATE=$(iwinfo wlan0 info | grep "Bit Rate:" | cut -d ':' -f2 | cut -d " " -f2)
+echo "BIT RATE - $BIT_RATE"
+		QUALIY_BASE=$(iwinfo wlan0 info | grep "Link Quality" | cut -d ' ' -f16 | cut -d "/" -f2)
+echo "QUALIY_BASE - $QUALIY_BASE"
+		QUALIY_VALUE=$(iwinfo wlan0 info | grep "Link Quality" | cut -d ' ' -f16 | cut -d "/" -f1)
+echo "QUALIY_VALUE - $QUALIY_VALUE"
+		SIGNAL_LEVEL=$(iwinfo wlan0 info | grep "Signal" | cut -d ' ' -f12)
+		BSSID=$(iwinfo wlan0 info | grep "Access Point" | cut -d " " -f13)
+echo "BSSID - $BSSID"
 		SIGNAL_LEVEL=$((${SIGNAL_LEVEL}+65536))
-			if ([[ $QUALIY_VALUE -eq "unknown" ]] || [[ $BIT_RATE -eq "unknown" ]] || [[ $SIGNAL_LEVEL -eq 65536 ]])
-			 then
-				QUALIY_VALUE=0
-				BIT_RATE=0
-				SIGNAL_LEVEL=0
-			fi
 
 	fi
 
@@ -246,12 +244,16 @@ do
 		MASK=$(route -n | grep $WIRELESS_DEVICE | grep -v UH | grep -v UG | cut -c33-48)
 		MASK=$(netmask2cidr $MASK)
 		GATEWAY=$(route -n | grep $WIRELESS_DEVICE | grep UG | cut -c17-32)
-		CLIENTS=$(nmap -sn -PU $NETWORK/24 --exclude $GATEWAY | grep "Nmap done:" | cut -d "(" -f2 | cut -d " " -f1)
+#		CLIENTS=$(nmap -sn -PU $NETWORK/$MASK --exclude $GATEWAY | grep done | cut -d "(" -f2 | cut -d " " -f1)
+		CLIENTS=$(grep $BSSID $HOME/airdump-01.csv | grep -v associated | wc -l)
+echo $BSSID > $HOME/BSSID
+echo $CLIENTS > $HOME/clients.log
+#		> $HOME/airdump-01.csv
 		COUNTER=0
 	fi
 	((COUNTER++))
 
-	if ([[ -z $BIT_RATE ]] || [[ $BIT_RATE -gt 300 ]])
+	if [ -z $BIT_RATE ]
 	then
 	    BIT_RATE=0
 	fi
@@ -282,7 +284,7 @@ do
 	modbus_client -mrtu --debug $SERIAL_PORT -pnone -s2 -t0x10 -a1 -b$BAUD -r1000 ${SIGNAL_LEVEL} ${BIT_RATE} ${QUALIY_VALUE} ${QUALIY_BASE} $CLIENTS
 
 	until [ "$?" -eq 0 ]; do
-		modbus_client -mrtu --debug $SERIAL_PORT -pnone -s2 -t0x10 -a1 -b$BAUD -r1000 ${SIGNAL_LEVEL} ${BIT_RATE} ${QUALIY_VALUE} ${QUALIY_BASE} $CLIENTS 
+		modbus_client -mrtu --debug $SERIAL_PORT -pnone -s2 -t0x10 -a1 -b$BAUD -r1000 ${SIGNAL_LEVEL} ${BIT_RATE} ${QUALIY_VALUE} ${QUALIY_BASE} $CLIENTS
 	done
 
 #echo $UPDATE
@@ -296,5 +298,6 @@ do
 
 #	rm essid_numbers
 #	rm scan_output
+
 
 done
