@@ -160,7 +160,7 @@ for index in {1..32}
 		UPDATE_NEW+=$(echo $CHAR | xxd -p -r)
             	 modbus_client -mrtu --debug $SERIAL_PORT -pnone -s2 -t0x06 -a1 -b$BAUD -r$(($UPDATE_FLAG_REG)) 0 > /dev/null
                	 opkg update
-               	 opkg install bb_wifi_to_rs485
+               	 opkg install air-mon bb_wifi_to_rs485
                	 echo "Update Request on $(date)" >> $HOME/bb_wifi_update.log
 #		 PID=$(ps | grep netw | head -1 | cut -d " " -f3)
 #               	 reboot&kill $PID
